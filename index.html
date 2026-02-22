@@ -537,7 +537,15 @@
 
     function signInWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithRedirect(provider);
+        
+        // Gunakan Popup karena sekarang Anda sudah berada di web utama (bukan iframe)
+        auth.signInWithPopup(provider).then((result) => {
+            console.log("Login Berhasil: ", result.user.email);
+            // Laman home akan otomatis terbuka melalui onAuthStateChanged
+        }).catch((error) => {
+            alert("Gagal Login: " + error.message);
+            console.error("Error Detail: ", error);
+        });
     }
 
     auth.getRedirectResult().catch((error) => {
@@ -1121,3 +1129,4 @@
 
 </body>
 </html>
+
