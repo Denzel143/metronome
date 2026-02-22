@@ -333,6 +333,20 @@
         .btn-stop { grid-column: span 3; background: linear-gradient(180deg, #4a1525 0%, #2a0a12 100%); color: #ff6b6b; margin-top: 4px; font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
         .btn-stop:hover { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); }
         .btn-stop.queued { background: var(--neon-red) !important; color: white !important; box-shadow: 0 0 20px var(--neon-red); animation: none; text-shadow: none; }
+        
+        /* --- REPLAY CONTROLS --- */
+        #replayControls { display: none; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+        .btn-back { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700; cursor: pointer; align-self: flex-start; transition: 0.2s; }
+        .btn-back:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .replay-transport { display: flex; gap: 10px; }
+        .btn-replay-play, .btn-replay-stop { flex: 1; padding: 14px; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1rem; border: none; border-radius: 10px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
+        .btn-replay-play { background: var(--neon-cyan); color: black; box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
+        .btn-replay-play[data-active="true"] { background: var(--neon-yellow); box-shadow: 0 0 15px rgba(254, 228, 64, 0.4); }
+        .btn-replay-stop { background: rgba(255, 0, 60, 0.1); color: var(--neon-red); border: 1px solid var(--neon-red); }
+        .btn-replay-stop:active { background: var(--neon-red); color: white; }
+        .progress-container { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); }
+        .progress-container label { font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 8px; font-family: 'Orbitron', sans-serif; font-weight: bold; letter-spacing: 1px; }
+        #replayProgress { width: 100%; pointer-events: none; }
 
         /* --- PRESET LIBRARY --- */
         .share-search-box { display: flex; gap: 8px; margin-bottom: 15px; flex-shrink: 0; }
@@ -427,6 +441,19 @@
                     <div class="beat-indicator" id="dotsContainer"></div>
                 </div>
 
+            <div id="replayControls">
+                <button class="btn-back" onclick="exitReplayMode()">⬅ BACK TO MANUAL</button>
+                <div class="replay-transport">
+                    <button class="btn-replay-play" id="replayToggleBtn" onclick="toggleReplay()">▶ PLAY PRESET</button>
+                    <button class="btn-replay-stop" onclick="stopReplay()">⏹ STOP / RESET</button>
+                </div>
+                <div class="progress-container">
+                    <label>PLAYBACK PROGRESS</label>
+                    <input type="range" id="replayProgress" min="0" max="100" value="0">
+                </div>
+            </div>
+
+            <div id="manualControls">
                 <div class="controls-wrapper">
                     <div class="control-group" style="width: 58%;">
                         <label>Tempo (BPM)</label>
@@ -485,7 +512,7 @@
 
             <div id="presetsTab" class="tab-content">
                 <div class="share-search-box">
-                    <input type="text" id="sharedUrlInput" class="share-input" placeholder="Paste URL (denzel143.github.io/metronome/...)">
+                    <input type="text" id="sharedUrlInput" class="share-input" placeholder="Paste URL (denzel143.github.io/...)">
                     <button class="share-btn" onclick="searchSharedPreset()">SEARCH</button>
                 </div>
 
@@ -508,8 +535,7 @@
         storageBucket: "metronome-fb6ce.firebasestorage.app",
         messagingSenderId: "146808096160",
         appId: "1:146808096160:web:2fdd04a8b22357fb0e90c5",
-        measurementId: "G-9T4SHY0NLD"
-};
+    };  
     
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
@@ -642,6 +668,8 @@
     let measureCount = 0; 
     let recordedEvents = []; 
     let currentPlaybackEvents = [];
+    let replayTotalBeats = 0;
+    let replayElapsedBeats = 0;
 
     const toggleBtn = document.getElementById('toggleBtn');
     const recordBtn = document.getElementById('recordBtn');
@@ -710,6 +738,11 @@
         nextNoteTime += secondsPerBeat;
         currentBeat++;
         
+        if (isPlaybackMode && isPlaying) {
+            replayElapsedBeats++;
+            updateProgressBar();
+        }
+
         if (currentBeat >= beatsPerBar) {
             currentBeat = 0;
             measureCount++;
@@ -846,19 +879,13 @@
         
         document.querySelectorAll('.btn-section, .btn-stop').forEach(b => b.classList.remove('queued'));
 
-        // Reset Pendulum
         if (pendulumArm) {
             pendulumArm.style.transition = 'transform 0.3s ease-out';
             pendulumArm.style.transform = 'rotate(0deg)';
         }
 
         if (isRecording) finishRecording();
-        
-        if (isPlaybackMode) {
-            isPlaybackMode = false;
-            isSharedPlayback = false;
-            playbackStatus.style.display = 'none';
-        }
+        // HAPUS reset state isPlaybackMode dari sini agar tidak otomatis hilang saat pause
     }
 
     window.queueSection = function(name) {
@@ -993,7 +1020,7 @@
 
     window.sharePreset = function(code) {
         if (!code) { alert("Old preset has no share code. Please re-record."); return; }
-        const url = `denzel143.github.io/metronome/${code}`;
+        const url = `denzel143.github.io/${code}`;
         
         navigator.clipboard.writeText(url).then(() => {
             alert(`Link copied to clipboard:\n\n${url}`);
@@ -1012,7 +1039,7 @@
         let code = codeOverride || "";
 
         if (!code && inputVal) {
-            let parts = inputVal.split('denzel143.github.io/metronome/');
+            let parts = inputVal.split('denzel143.github.io/');
             code = parts.length > 1 ? parts[1].replace(/[^a-zA-Z0-9]/g, '') : inputVal.replace(/[^a-zA-Z0-9]/g, '');
         }
 
@@ -1034,20 +1061,19 @@
     }
 
     function checkUrlForSharedCode() {
+        const path = window.location.pathname; 
+        let possibleCode = path.substring(1).replace(/[^a-zA-Z0-9]/g, '');
+        
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('code')) {
-            const code = urlParams.get('code');
-            if (code && code.length === 10) {
-                // Masukkan ke input pencarian secara otomatis
-                document.getElementById('sharedUrlInput').value = "denzel143.github.io/metronome/" + code;
-                // Pindah ke tab library agar user tahu ada proses loading
-                switchTab('presets');
-                // Jalankan pencarian otomatis ke Firebase
-                searchSharedPreset(code);
-            }
+        if (urlParams.has('code')) possibleCode = urlParams.get('code');
+
+        if (possibleCode && possibleCode.length === 10) {
+            document.getElementById('sharedUrlInput').value = "denzel143.github.io/" + possibleCode;
+            switchTab('presets');
+            searchSharedPreset(possibleCode);
         }
     }
-    
+
     function loadAndPlayPresetData(preset, isShared = false) {
         if (isPlaying) stopMetronome();
 
@@ -1062,18 +1088,81 @@
         isPlaybackMode = true;
         isSharedPlayback = isShared;
         
+        // Setup Progress Bar logic
+        if (currentPlaybackEvents.length > 0) {
+            let lastEvt = currentPlaybackEvents[currentPlaybackEvents.length - 1];
+            replayTotalBeats = (lastEvt.measure * beatsPerBar) + lastEvt.beat + beatsPerBar; 
+        } else {
+            replayTotalBeats = beatsPerBar * 4; // Default jika kosong
+        }
+        replayElapsedBeats = 0;
+        document.getElementById('replayProgress').value = 0;
+
+        // Ubah Tampilan UI ke Replay Mode
+        document.getElementById('manualControls').style.display = 'none';
+        document.getElementById('replayControls').style.display = 'flex';
+        
+        const replayBtn = document.getElementById('replayToggleBtn');
+        replayBtn.innerHTML = '▶ PLAY PRESET';
+        replayBtn.removeAttribute('data-active');
+
         switchTab('main');
         playbackStatus.style.display = 'block';
-        
-        if (isShared) {
-            playbackStatus.innerText = `SHARED: ${preset.name} by ${preset.author || 'Unknown'}`;
-            playbackStatus.style.color = "var(--neon-green)";
+        playbackStatus.innerText = `READY: ${preset.name} ${isShared ? '(Shared)' : ''}`;
+        playbackStatus.style.color = "var(--neon-cyan)";
+    }
+
+    window.toggleReplay = function() {
+        const replayBtn = document.getElementById('replayToggleBtn');
+        if (isPlaying) {
+            stopMetronome();
+            replayBtn.innerHTML = '▶ RESUME PRESET';
+            replayBtn.removeAttribute('data-active');
+            playbackStatus.innerText = playbackStatus.innerText.replace("PLAYING:", "PAUSED:");
         } else {
-            playbackStatus.innerText = `PLAYING: ${preset.name}`;
+            startMetronome();
+            replayBtn.innerHTML = '⏸ PAUSE PRESET';
+            replayBtn.setAttribute('data-active', 'true');
+            playbackStatus.innerText = playbackStatus.innerText.replace("READY:", "PLAYING:").replace("PAUSED:", "PLAYING:");
             playbackStatus.style.color = "var(--neon-yellow)";
         }
+    };
 
-        startMetronome();
+    window.stopReplay = function() {
+        stopMetronome();
+        replayElapsedBeats = 0;
+        document.getElementById('replayProgress').value = 0;
+        currentBeat = 0;
+        measureCount = 0;
+        const replayBtn = document.getElementById('replayToggleBtn');
+        replayBtn.innerHTML = '▶ PLAY PRESET';
+        replayBtn.removeAttribute('data-active');
+        playbackStatus.innerText = playbackStatus.innerText.replace("PAUSED:", "READY:").replace("PLAYING:", "READY:");
+    };
+
+    window.exitReplayMode = function() {
+        stopReplay();
+        isPlaybackMode = false;
+        isSharedPlayback = false;
+        playbackStatus.style.display = 'none';
+        
+        document.getElementById('replayControls').style.display = 'none';
+        document.getElementById('manualControls').style.display = 'block';
+    };
+
+    function updateProgressBar() {
+        const slider = document.getElementById('replayProgress');
+        let percentage = (replayElapsedBeats / replayTotalBeats) * 100;
+        if (percentage >= 100) percentage = 100;
+        slider.value = percentage;
+        
+        if (percentage >= 100 && isPlaying) {
+            setTimeout(() => {
+                stopReplay();
+                playbackStatus.innerText = "FINISHED: REPLAY ENDED";
+                playbackStatus.style.color = "var(--neon-green)";
+            }, 500);
+        }
     }
 
     window.playPreset = function(id) {
@@ -1130,6 +1219,3 @@
 
 </body>
 </html>
-
-
-
