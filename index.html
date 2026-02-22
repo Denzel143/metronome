@@ -1034,19 +1034,20 @@
     }
 
     function checkUrlForSharedCode() {
-        const path = window.location.pathname; 
-        let possibleCode = path.substring(1).replace(/[^a-zA-Z0-9]/g, '');
-        
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('code')) possibleCode = urlParams.get('code');
-
-        if (possibleCode && possibleCode.length === 10) {
-            document.getElementById('sharedUrlInput').value = "denzel143.github.io/" + possibleCode;
-            switchTab('presets');
-            searchSharedPreset(possibleCode);
+        if (urlParams.has('code')) {
+            const code = urlParams.get('code');
+            if (code && code.length === 10) {
+                // Masukkan ke input pencarian secara otomatis
+                document.getElementById('sharedUrlInput').value = "denzel143.github.io/metronome/" + code;
+                // Pindah ke tab library agar user tahu ada proses loading
+                switchTab('presets');
+                // Jalankan pencarian otomatis ke Firebase
+                searchSharedPreset(code);
+            }
         }
     }
-
+    
     function loadAndPlayPresetData(preset, isShared = false) {
         if (isPlaying) stopMetronome();
 
@@ -1129,4 +1130,5 @@
 
 </body>
 </html>
+
 
