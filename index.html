@@ -510,12 +510,15 @@
                 </div>
             </div>
 
+            
             <div id="presetsTab" class="tab-content">
-                <div class="share-search-box">
-                <input type="text" id="sharedUrlInput" placeholder="Paste shared link or 10-digit code...">
-                <button onclick="handleSearchShared()">LOAD</button>
+            <div class="share-search-box">
+                <input type="text" id="sharedUrlInput" class="share-input" placeholder="Paste URL (denzel143.github.io/...)">
+                <button class="share-btn" onclick="searchSharedPreset()">SEARCH</button>
             </div>
-            <div class="preset-list" id="presetList"></div>
+            <div class="preset-area">
+                <div id="presetList"></div>
+            </div>
         </div>
     </div>
 
