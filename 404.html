@@ -3,58 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading Preset...</title>
+    <title>Routing Preset...</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            background-color: #0b0c10;
-            color: #00f3ff;
-            font-family: 'Orbitron', sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-        .loader {
-            border: 4px solid rgba(0, 243, 255, 0.1);
-            border-top: 4px solid #00f3ff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
-        }
+        body { background-color: #0b0c10; color: #00f3ff; font-family: 'Orbitron', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; }
+        .loader { border: 4px solid rgba(0, 243, 255, 0.1); border-top: 4px solid #00f3ff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        p { letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+        p { letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
     <div class="loader"></div>
-    <p>ROUTING PRESET...</p>
+    <p>RETRIEVING PRESET DATA...</p>
 
     <script>
-        // Mengambil path URL, contoh: "/smart-metronome/ABCDEFGHIJ" atau "/ABCDEFGHIJ"
-        const path = window.location.pathname;
+        // 1. Ambil path lengkap, misal: "/metronome/ABCDEFGHIJ"
+        const fullPath = window.location.pathname;
         
-        // Memisahkan URL dan mengambil bagian paling belakang (kodenya)
-        const parts = path.split('/');
-        const potentialCode = parts.pop().replace(/[^a-zA-Z0-9]/g, ''); 
+        // 2. Pecah berdasarkan "/" dan bersihkan bagian yang kosong
+        const segments = fullPath.split('/').filter(segment => segment.length > 0);
         
-        // Mengambil path utamanya (misal: "/smart-metronome")
-        const basePath = parts.join('/');
+        // 3. Cari kode preset (segmen terakhir)
+        const potentialCode = segments[segments.length - 1];
 
-        // Jika panjang kode tepat 10 karakter (sesuai format ID share Anda)
-        if (potentialCode.length === 10) {
-            // Redirect ke halaman utama dengan query parameter "?code=..."
-            window.location.replace(basePath + '/?code=' + potentialCode);
+        // 4. Tentukan arah redirect
+        // Kita paksa redirect ke /metronome/ agar kembali ke index.html
+        const destinationBase = "/metronome/";
+
+        if (potentialCode && potentialCode.length === 10) {
+            // Jika segmen terakhir adalah 10 digit kode, bawa sebagai parameter ?code=
+            window.location.replace(destinationBase + "?code=" + potentialCode);
         } else {
-            // Jika bukan kode yang valid, kembalikan ke halaman beranda secara normal
-            window.location.replace(basePath + '/');
+            // Jika bukan kode, balikkan ke home normal
+            window.location.replace(destinationBase);
         }
     </script>
 </body>
