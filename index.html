@@ -849,21 +849,14 @@
     function startMetronome() {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         
+        currentBeat = 0;
+        measureCount = 0;
         nextNoteTime = audioCtx.currentTime + 0.1;
         isPlaying = true;
         
-        // Pengecekan Pause/Resume
-        if (isPlaybackMode && isPausedReplay) {
-            // JIKA RESUME: Jangan reset beat, measure, atau cue lagu
-            isPausedReplay = false;
-        } else {
-            // JIKA START DARI AWAL / MANUAL: Reset semuanya ke 0
-            currentBeat = 0;
-            measureCount = 0;
-            targetMeasureCountIn = -1;
-            pendingStop = false;
-            pendulumSwingRight = true;
-        }
+        targetMeasureCountIn = -1;
+        pendingStop = false;
+        pendulumSwingRight = true; // Reset ayunan ke kanan dulu
         
         toggleBtn.innerHTML = "STOP <span class='shortcut'>[SPACE]</span>";
         toggleBtn.style.color = "var(--neon-red)"; 
