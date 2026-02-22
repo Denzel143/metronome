@@ -485,7 +485,7 @@
 
             <div id="presetsTab" class="tab-content">
                 <div class="share-search-box">
-                    <input type="text" id="sharedUrlInput" class="share-input" placeholder="Paste URL (denzel143.github.io/...)">
+                    <input type="text" id="sharedUrlInput" class="share-input" placeholder="Paste URL (denzel143.github.io/metronome/...)">
                     <button class="share-btn" onclick="searchSharedPreset()">SEARCH</button>
                 </div>
 
@@ -993,7 +993,7 @@
 
     window.sharePreset = function(code) {
         if (!code) { alert("Old preset has no share code. Please re-record."); return; }
-        const url = `denzel143.github.io/${code}`;
+        const url = `denzel143.github.io/metronome/${code}`;
         
         navigator.clipboard.writeText(url).then(() => {
             alert(`Link copied to clipboard:\n\n${url}`);
@@ -1012,7 +1012,7 @@
         let code = codeOverride || "";
 
         if (!code && inputVal) {
-            let parts = inputVal.split('denzel143.github.io/');
+            let parts = inputVal.split('denzel143.github.io/metronome/');
             code = parts.length > 1 ? parts[1].replace(/[^a-zA-Z0-9]/g, '') : inputVal.replace(/[^a-zA-Z0-9]/g, '');
         }
 
@@ -1130,5 +1130,6 @@
 
 </body>
 </html>
+
 
 
