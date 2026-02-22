@@ -1042,6 +1042,34 @@
         });
     }
 
+    /* --- START: Add last-preset localStorage helpers --- */
+    function saveLastPreset() {
+        try {
+            const last = { bpm: tempo, signature: beatsPerBar };
+            localStorage.setItem('metronome_last_preset', JSON.stringify(last));
+        } catch (e) {
+            console.warn("Could not save last preset:", e);
+        }
+    }
+
+    function loadLastPreset() {
+        try {
+            const raw = localStorage.getItem('metronome_last_preset');
+            if (!raw) return;
+            const data = JSON.parse(raw);
+            if (data && typeof data.bpm === 'number' && typeof data.signature === 'number') {
+                // apply but clamp bpm and ensure signature is sensible
+                const bpm = Math.min(240, Math.max(40, data.bpm));
+                updateTempoUI(bpm);
+                beatsPerBar = parseInt(data.signature) || beatsPerBar;
+                signatureSelect.value = beatsPerBar;
+            }
+        } catch (e) {
+            console.warn("Could not load last preset:", e);
+        }
+    }
+    /* --- END: Add last-preset localStorage helpers --- */
+
     window.sharePreset = function(code) {
         if (!code) { alert("Old preset has no share code. Please re-record."); return; }
         const url = `denzel143.github.io/metronome/${code}`;
@@ -1133,7 +1161,7 @@
 
         switchTab('main');
         playbackStatus.style.display = 'block';
-        playbackStatus.innerText = `READY: ${preset.name} ${isShared ? '(Shared)' : ''}`;
+        playbackStatus.innerText = `READY: ${preset.name} — ${preset.bpm} BPM ${isShared ? '(Shared)' : ''}`;
         playbackStatus.style.color = "var(--neon-cyan)";
     }
 
@@ -1248,7 +1276,11 @@
         tempo = val;
         tempoInput.value = tempo;
         tempoSlider.value = tempo;
+
+        // Simpan ke localStorage setiap kali tempo berubah
+        saveLastPreset();
     }
+    /* --- END: REPLACE updateTempoUI() --- */
 
     window.adjustTempo = function(amount) {
         if (isPlaying) return;
@@ -1258,15 +1290,22 @@
     tempoInput.addEventListener('change', (e) => { updateTempoUI(parseInt(e.target.value) || 120); });
     tempoSlider.addEventListener('input', (e) => { updateTempoUI(parseInt(e.target.value)); });
 
+    /* --- START: REPLACE signature select change handler --- */
     signatureSelect.addEventListener('change', (e) => {
         beatsPerBar = parseInt(e.target.value);
         beatStates = Array.from({length: beatsPerBar}, (_, i) => i === 0 ? 'tik' : 'tok');
         createDots();
-    });
 
-    // Initialize
+        // Simpan birama saat berubah
+        saveLastPreset();
+    });
+    /* --- END: REPLACE signature select change handler --- */
+
+    /* --- START: REPLACE initialization block to load last preset --- */
+    loadLastPreset(); // kalau ada preset terakhir, ini akan set tempo & signature dulu
     beatStates = Array.from({length: beatsPerBar}, (_, i) => i === 0 ? 'tik' : 'tok');
     createDots();
+    /* --- END: REPLACE initialization block --- */
 
 </script>
 
