@@ -867,27 +867,49 @@
         scheduler();
     }
 
-    function stopMetronome() {
+    function stopMetronome(reset = true) {
+        // Hentikan scheduler dan tandai tidak playing
         isPlaying = false;
         clearTimeout(timerID);
+
+        // UI transport
         toggleBtn.innerHTML = "START <span class='shortcut'>[SPACE]</span>";
         toggleBtn.style.color = "white";
         toggleBtn.removeAttribute('data-active');
-        
+
+        // Buka kembali kontrol tempo / signature
         toggleControlState(false);
-        
+
+        // Reset visual dots ke state dasar
         const dots = document.querySelectorAll('.dot');
         dots.forEach((d, i) => d.className = `dot state-${beatStates[i]}`);
-        
+
+        // Hapus queued section highlight
         document.querySelectorAll('.btn-section, .btn-stop').forEach(b => b.classList.remove('queued'));
 
+        // Smoothly reset pendulum visual
         if (pendulumArm) {
             pendulumArm.style.transition = 'transform 0.3s ease-out';
             pendulumArm.style.transform = 'rotate(0deg)';
         }
 
+        // Jika sedang merekam, finalisasi rekaman (perilaku lama)
         if (isRecording) finishRecording();
-        // HAPUS reset state isPlaybackMode dari sini agar tidak otomatis hilang saat pause
+
+        // Reset internal counters & scheduling state jika diminta
+        // (default reset = true untuk stop manual agar START berikutnya mulai dari awal)
+        if (reset) {
+            nextNoteTime = 0;
+            currentBeat = 0;
+            measureCount = 0;
+            targetMeasureCountIn = -1;
+            pendingStop = false;
+            // pastikan scheduler tidak berjalan lagi
+            clearTimeout(timerID);
+
+            // optional: jika ada visual playback status (replay mode), jangan ganggu di sini
+            // (replay mode punya stopReplay/exitReplayMode yang mengatur UI khususnya)
+        }
     }
 
     window.queueSection = function(name) {
@@ -1117,17 +1139,42 @@
 
     window.toggleReplay = function() {
         const replayBtn = document.getElementById('replayToggleBtn');
+
         if (isPlaying) {
-            stopMetronome();
+            // ----- PAUSE (don't reset playback position) -----
+            // Hentikan scheduler tapi JANGAN memanggil stopMetronome()
+            isPlaying = false;
+            clearTimeout(timerID);
+
+            // Update UI (replay controls)
             replayBtn.innerHTML = '▶ RESUME PRESET';
             replayBtn.removeAttribute('data-active');
             playbackStatus.innerText = playbackStatus.innerText.replace("PLAYING:", "PAUSED:");
+            playbackStatus.style.color = "var(--neon-cyan)";
+
+            // Keep controls locked while paused (still in replay mode)
+            toggleControlState(true);
+
+            // Smooth pendulum stop
+            if (pendulumArm) {
+                pendulumArm.style.transition = 'transform 0.3s ease-out';
+            }
         } else {
-            startMetronome();
+            // ----- RESUME -----
+            // Ensure audio context ready
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            // Continue scheduling from currentBeat/measureCount
+            nextNoteTime = audioCtx.currentTime + 0.1;
+            isPlaying = true;
+
             replayBtn.innerHTML = '⏸ PAUSE PRESET';
             replayBtn.setAttribute('data-active', 'true');
             playbackStatus.innerText = playbackStatus.innerText.replace("READY:", "PLAYING:").replace("PAUSED:", "PLAYING:");
             playbackStatus.style.color = "var(--neon-yellow)";
+
+            // Start scheduler to continue where we left off
+            scheduler();
         }
     };
 
@@ -1225,4 +1272,3 @@
 
 </body>
 </html>
-
