@@ -849,8 +849,8 @@
     function startMetronome() {
         if (audioCtx.state === 'suspended') audioCtx.resume();
         
-        currentBeat = 0;
-        measureCount = 0;
+        // currentBeat = 0;
+        // measureCount = 0;
         nextNoteTime = audioCtx.currentTime + 0.1;
         isPlaying = true;
         
@@ -1225,3 +1225,4 @@
 
 </body>
 </html>
+
