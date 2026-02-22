@@ -512,14 +512,10 @@
 
             <div id="presetsTab" class="tab-content">
                 <div class="share-search-box">
-                    <input type="text" id="sharedUrlInput" class="share-input" placeholder="Paste URL (denzel143.github.io/...)">
-                    <button class="share-btn" onclick="searchSharedPreset()">SEARCH</button>
-                </div>
-
-                <div class="preset-area">
-                    <div id="presetList"></div>
-                </div>
+                <input type="text" id="sharedUrlInput" placeholder="Paste shared link or 10-digit code...">
+                <button onclick="handleSearchShared()">LOAD</button>
             </div>
+            <div class="preset-list" id="presetList"></div>
         </div>
     </div>
 
@@ -670,6 +666,7 @@
     let currentPlaybackEvents = [];
     let replayTotalBeats = 0;
     let replayElapsedBeats = 0;
+    let isPausedReplay = false;
 
     const toggleBtn = document.getElementById('toggleBtn');
     const recordBtn = document.getElementById('recordBtn');
@@ -845,10 +842,17 @@
     }
 
     function startMetronome() {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        
-        currentBeat = 0;
-        measureCount = 0;
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        // Cek apakah ini dilanjutkan (resume) dari state pause
+        if (isPlaybackMode && isPausedReplay) {
+            isPausedReplay = false; // Mode Resume: biarkan ketukan berjalan dari posisi terakhir
+        } else {
+            currentBeat = 0;
+            measureCount = 0; // Mode Start Normal: reset dari 0
+        }
         nextNoteTime = audioCtx.currentTime + 0.1;
         isPlaying = true;
         
@@ -1116,16 +1120,35 @@
         const replayBtn = document.getElementById('replayToggleBtn');
         if (isPlaying) {
             stopMetronome();
+            isPausedReplay = true; // Tandai bahwa ini di-pause, bukan di-stop/reset
             replayBtn.innerHTML = '▶ RESUME PRESET';
             replayBtn.removeAttribute('data-active');
             playbackStatus.innerText = playbackStatus.innerText.replace("PLAYING:", "PAUSED:");
         } else {
-            startMetronome();
+            startMetronome(); // Karena isPausedReplay = true, lagu akan dilanjutkan
             replayBtn.innerHTML = '⏸ PAUSE PRESET';
             replayBtn.setAttribute('data-active', 'true');
             playbackStatus.innerText = playbackStatus.innerText.replace("READY:", "PLAYING:").replace("PAUSED:", "PLAYING:");
             playbackStatus.style.color = "var(--neon-yellow)";
         }
+    };
+
+    window.stopReplay = function() {
+        stopMetronome();
+        isPausedReplay = false; // Reset status pause sepenuhnya
+        replayElapsedBeats = 0;
+        document.getElementById('replayProgress').value = 0;
+        currentBeat = 0;
+        measureCount = 0;
+        const replayBtn = document.getElementById('replayToggleBtn');
+        replayBtn.innerHTML = '▶ PLAY PRESET';
+        replayBtn.removeAttribute('data-active');
+        playbackStatus.innerText = playbackStatus.innerText.replace("PAUSED:", "READY:").replace("PLAYING:", "READY:");
+    };
+
+    window.exitReplayMode = function() {
+        // Redirect ke URL murni tanpa parameter ?code=, ini otomatis me-reset RAM/state aplikasi
+        window.location.replace(window.location.pathname);
     };
 
     window.stopReplay = function() {
