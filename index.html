@@ -334,6 +334,20 @@
         .btn-stop:hover { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); }
         .btn-stop.queued { background: var(--neon-red) !important; color: white !important; box-shadow: 0 0 20px var(--neon-red); animation: none; text-shadow: none; }
 
+        /* --- REPLAY CONTROLS --- */
+        #replayControls { display: none; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+        .btn-back { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700; cursor: pointer; align-self: flex-start; transition: 0.2s; }
+        .btn-back:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .replay-transport { display: flex; gap: 10px; }
+        .btn-replay-play, .btn-replay-stop { flex: 1; padding: 14px; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1rem; border: none; border-radius: 10px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
+        .btn-replay-play { background: var(--neon-cyan); color: black; box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
+        .btn-replay-play[data-active="true"] { background: var(--neon-yellow); box-shadow: 0 0 15px rgba(254, 228, 64, 0.4); }
+        .btn-replay-stop { background: rgba(255, 0, 60, 0.1); color: var(--neon-red); border: 1px solid var(--neon-red); }
+        .btn-replay-stop:active { background: var(--neon-red); color: white; }
+        .progress-container { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); }
+        .progress-container label { font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 8px; font-family: 'Orbitron', sans-serif; font-weight: bold; letter-spacing: 1px; }
+        #replayProgress { width: 100%; pointer-events: none; }
+
         /* --- PRESET LIBRARY --- */
         .share-search-box { display: flex; gap: 8px; margin-bottom: 15px; flex-shrink: 0; }
         .share-input { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: var(--neon-cyan); padding: 12px; border-radius: 8px; outline: none; font-size: 0.85rem; font-family: 'Rajdhani', sans-serif;}
@@ -427,58 +441,72 @@
                     <div class="beat-indicator" id="dotsContainer"></div>
                 </div>
 
-                <div class="controls-wrapper">
-                    <div class="control-group" style="width: 58%;">
-                        <label>Tempo (BPM)</label>
-                        <div class="tempo-area">
-                            <div class="tweak-row">
-                                <button class="tempo-tweak" onclick="adjustTempo(1)">+1</button>
-                                <button class="tempo-tweak" onclick="adjustTempo(5)">+5</button>
+                <div id="replayControls">
+                  <button class="btn-back" onclick="exitReplayMode()">⬅ BACK TO MANUAL</button>
+                    <div class="replay-transport">
+                        <button class="btn-replay-play" id="replayToggleBtn" onclick="toggleReplay()">▶ PLAY PRESET</button>
+                        <button class="btn-replay-stop" onclick="stopReplay()">⏹ STOP / RESET</button>
+                    </div>
+                    <div class="progress-container">
+                        <label>PLAYBACK PROGRESS</label>
+                        <input type="range" id="replayProgress" min="0" max="100" value="0">
+                    </div>
+                </div>
+
+                <div id="manualControls">
+                   <div class="controls-wrapper">
+                        <div class="control-group" style="width: 58%;">
+                            <label>Tempo (BPM)</label>
+                            <div class="tempo-area">
+                                <div class="tweak-row">
+                                    <button class="tempo-tweak" onclick="adjustTempo(1)">+1</button>
+                                    <button class="tempo-tweak" onclick="adjustTempo(5)">+5</button>
+                                </div>
+                                <input type="number" class="bpm-input" id="tempoInput" value="120" min="40" max="240">
+                                <div class="tweak-row">
+                                    <button class="tempo-tweak" onclick="adjustTempo(-1)">-1</button>
+                                    <button class="tempo-tweak" onclick="adjustTempo(-5)">-5</button>
+                                </div>
                             </div>
-                            <input type="number" class="bpm-input" id="tempoInput" value="120" min="40" max="240">
-                            <div class="tweak-row">
-                                <button class="tempo-tweak" onclick="adjustTempo(-1)">-1</button>
-                                <button class="tempo-tweak" onclick="adjustTempo(-5)">-5</button>
-                            </div>
+                            <input type="range" id="tempoSlider" min="40" max="240" value="120">
                         </div>
-                        <input type="range" id="tempoSlider" min="40" max="240" value="120">
-                    </div>
                     
-                    <div class="control-group" style="width: 38%; align-items: center;">
-                        <label>Signature</label>
-                        <select id="timeSignature">
-                            <option value="4">4 / 4</option>
-                            <option value="3">3 / 4</option>
-                            <option value="2">2 / 4</option>
-                            <option value="1">1 / 4</option>
-                        </select>
+                        <div class="control-group" style="width: 38%; align-items: center;">
+                            <label>Signature</label>
+                            <select id="timeSignature">
+                                <option value="4">4 / 4</option>
+                                <option value="3">3 / 4</option>
+                                <option value="2">2 / 4</option>
+                                <option value="1">1 / 4</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
 
-                <div class="transport-bar">
-                    <button class="btn-main" id="toggleBtn">START <span class="shortcut">[SPACE]</span></button>
-                    <button class="btn-rec" id="recordBtn">● REC</button>
-                </div>
+                    <div class="transport-bar">
+                        <button class="btn-main" id="toggleBtn">START <span class="shortcut">[SPACE]</span></button>
+                        <button class="btn-rec" id="recordBtn">● REC</button>
+                    </div>
                 
-                <div class="pad-container">
-                    <div class="section-grid">
-                        <button class="btn-section" onclick="queueSection('Prelude')">Prelude <span class="shortcut">Q</span></button>
-                        <button class="btn-section" onclick="queueSection('Intro')">Intro <span class="shortcut">W</span></button>
-                        <button class="btn-section" onclick="queueSection('Pre-Chorus')">Pre-Chorus <span class="shortcut">E</span></button>
-                        
-                        <button class="btn-section" onclick="queueSection('Verse 1')">Verse 1 <span class="shortcut">R</span></button>
-                        <button class="btn-section" onclick="queueSection('Verse 2')">Verse 2 <span class="shortcut">T</span></button>
-                        <button class="btn-section" onclick="queueSection('Verse 3')">Verse 3 <span class="shortcut">Y</span></button>
-                        
-                        <button class="btn-section" onclick="queueSection('Verse 4')">Verse 4 <span class="shortcut">U</span></button>
-                        <button class="btn-section" onclick="queueSection('Verse 5')">Verse 5 <span class="shortcut">I</span></button>
-                        <button class="btn-section" onclick="queueSection('Chorus')">Chorus <span class="shortcut">O</span></button>
-                        
-                        <button class="btn-section" onclick="queueSection('Interlude')">Interlude <span class="shortcut">P</span></button>
-                        <button class="btn-section" onclick="queueSection('Bridge')">Bridge <span class="shortcut">A</span></button>
-                        <button class="btn-section" onclick="queueSection('Ending')">Ending <span class="shortcut">S</span></button>
+                    <div class="pad-container">
+                        <div class="section-grid">
+                            <button class="btn-section" onclick="queueSection('Prelude')">Prelude <span class="shortcut">Q</span></button>
+                            <button class="btn-section" onclick="queueSection('Intro')">Intro <span class="shortcut">W</span></button>
+                            <button class="btn-section" onclick="queueSection('Pre-Chorus')">Pre-Chorus <span class="shortcut">E</span></button>
 
-                        <button class="btn-stop" onclick="queueSection('Stop')">STOP / FINISH <span class="shortcut">D</span></button>
+                            <button class="btn-section" onclick="queueSection('Verse 1')">Verse 1 <span class="shortcut">R</span></button>
+                            <button class="btn-section" onclick="queueSection('Verse 2')">Verse 2 <span class="shortcut">T</span></button>
+                           <button class="btn-section" onclick="queueSection('Verse 3')">Verse 3 <span class="shortcut">Y</span></button>
+                        
+                            <button class="btn-section" onclick="queueSection('Verse 4')">Verse 4 <span class="shortcut">U</span></button>
+                            <button class="btn-section" onclick="queueSection('Verse 5')">Verse 5 <span class="shortcut">I</span></button>
+                            <button class="btn-section" onclick="queueSection('Chorus')">Chorus <span class="shortcut">O</span></button>
+
+                            <button class="btn-section" onclick="queueSection('Interlude')">Interlude <span class="shortcut">P</span></button>
+                            <button class="btn-section" onclick="queueSection('Bridge')">Bridge <span class="shortcut">A</span></button>
+                            <button class="btn-section" onclick="queueSection('Ending')">Ending <span class="shortcut">S</span></button>
+
+                            <button class="btn-stop" onclick="queueSection('Stop')">STOP / FINISH <span class="shortcut">D</span></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -642,6 +670,8 @@
     let measureCount = 0; 
     let recordedEvents = []; 
     let currentPlaybackEvents = [];
+    let replayTotalBeats = 0;
+    let replayElapsedBeats = 0;
 
     const toggleBtn = document.getElementById('toggleBtn');
     const recordBtn = document.getElementById('recordBtn');
@@ -710,6 +740,11 @@
         nextNoteTime += secondsPerBeat;
         currentBeat++;
         
+        if (isPlaybackMode && isPlaying) {
+            replayElapsedBeats++;
+            updateProgressBar();
+        }
+
         if (currentBeat >= beatsPerBar) {
             currentBeat = 0;
             measureCount++;
@@ -846,19 +881,13 @@
         
         document.querySelectorAll('.btn-section, .btn-stop').forEach(b => b.classList.remove('queued'));
 
-        // Reset Pendulum
         if (pendulumArm) {
             pendulumArm.style.transition = 'transform 0.3s ease-out';
             pendulumArm.style.transform = 'rotate(0deg)';
         }
 
         if (isRecording) finishRecording();
-        
-        if (isPlaybackMode) {
-            isPlaybackMode = false;
-            isSharedPlayback = false;
-            playbackStatus.style.display = 'none';
-        }
+        // HAPUS reset state isPlaybackMode dari sini agar tidak otomatis hilang saat pause
     }
 
     window.queueSection = function(name) {
@@ -1062,18 +1091,81 @@
         isPlaybackMode = true;
         isSharedPlayback = isShared;
         
+        // Setup Progress Bar logic
+        if (currentPlaybackEvents.length > 0) {
+            let lastEvt = currentPlaybackEvents[currentPlaybackEvents.length - 1];
+            replayTotalBeats = (lastEvt.measure * beatsPerBar) + lastEvt.beat + beatsPerBar; 
+        } else {
+            replayTotalBeats = beatsPerBar * 4; // Default jika kosong
+        }
+        replayElapsedBeats = 0;
+        document.getElementById('replayProgress').value = 0;
+
+        // Ubah Tampilan UI ke Replay Mode
+        document.getElementById('manualControls').style.display = 'none';
+        document.getElementById('replayControls').style.display = 'flex';
+        
+        const replayBtn = document.getElementById('replayToggleBtn');
+        replayBtn.innerHTML = '▶ PLAY PRESET';
+        replayBtn.removeAttribute('data-active');
+
         switchTab('main');
         playbackStatus.style.display = 'block';
-        
-        if (isShared) {
-            playbackStatus.innerText = `SHARED: ${preset.name} by ${preset.author || 'Unknown'}`;
-            playbackStatus.style.color = "var(--neon-green)";
+        playbackStatus.innerText = `READY: ${preset.name} ${isShared ? '(Shared)' : ''}`;
+        playbackStatus.style.color = "var(--neon-cyan)";
+    }
+
+    window.toggleReplay = function() {
+        const replayBtn = document.getElementById('replayToggleBtn');
+        if (isPlaying) {
+            stopMetronome();
+            replayBtn.innerHTML = '▶ RESUME PRESET';
+            replayBtn.removeAttribute('data-active');
+            playbackStatus.innerText = playbackStatus.innerText.replace("PLAYING:", "PAUSED:");
         } else {
-            playbackStatus.innerText = `PLAYING: ${preset.name}`;
+            startMetronome();
+            replayBtn.innerHTML = '⏸ PAUSE PRESET';
+            replayBtn.setAttribute('data-active', 'true');
+            playbackStatus.innerText = playbackStatus.innerText.replace("READY:", "PLAYING:").replace("PAUSED:", "PLAYING:");
             playbackStatus.style.color = "var(--neon-yellow)";
         }
+    };
 
-        startMetronome();
+    window.stopReplay = function() {
+        stopMetronome();
+        replayElapsedBeats = 0;
+        document.getElementById('replayProgress').value = 0;
+        currentBeat = 0;
+        measureCount = 0;
+        const replayBtn = document.getElementById('replayToggleBtn');
+        replayBtn.innerHTML = '▶ PLAY PRESET';
+        replayBtn.removeAttribute('data-active');
+        playbackStatus.innerText = playbackStatus.innerText.replace("PAUSED:", "READY:").replace("PLAYING:", "READY:");
+    };
+
+    window.exitReplayMode = function() {
+        stopReplay();
+        isPlaybackMode = false;
+        isSharedPlayback = false;
+        playbackStatus.style.display = 'none';
+        
+        document.getElementById('replayControls').style.display = 'none';
+        document.getElementById('manualControls').style.display = 'block';
+    };
+
+    function updateProgressBar() {
+        const slider = document.getElementById('replayProgress');
+        let percentage = (replayElapsedBeats / replayTotalBeats) * 100;
+        if (percentage >= 100) percentage = 100;
+        slider.value = percentage;
+        
+        if (percentage >= 100 && isPlaying) {
+            setTimeout(() => {
+                stopReplay();
+                playbackStatus.innerText = "FINISHED: REPLAY ENDED";
+                playbackStatus.style.color = "var(--neon-green)";
+            }, 500);
+        }
     }
 
     window.playPreset = function(id) {
